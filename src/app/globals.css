@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Hide scrollbars but keep scroll functionality inside the phone */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle dotted noise for premium page bg */
+.bg-noise {
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(163, 255, 18, 0.08), transparent 60%),
+    radial-gradient(800px 500px at 20% 110%, rgba(80, 120, 255, 0.07), transparent 60%),
+    radial-gradient(900px 600px at 90% 30%, rgba(255, 90, 200, 0.05), transparent 60%);
+}
+
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ring-brand-soft {
+  box-shadow:
+    0 0 0 1px rgba(163, 255, 18, 0.25),
+    0 0 30px rgba(163, 255, 18, 0.18);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Gradient text helper */
+.text-gradient-brand {
+  background: linear-gradient(180deg, #eaffc5 0%, #a3ff12 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Soft divider */
+.hairline {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  height: 1px;
+  width: 100%;
+}
