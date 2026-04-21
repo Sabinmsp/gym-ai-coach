@@ -18,10 +18,10 @@ export function PhoneFrame({ children, className }: PhoneFrameProps) {
       {/* Ambient glow behind the phone */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 blur-3xl opacity-70"
+        className="absolute inset-0 -z-10 blur-3xl opacity-60"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(163,255,18,0.22), transparent 70%)",
+            "radial-gradient(closest-side, rgba(163,255,18,0.28), transparent 70%)",
         }}
       />
 
@@ -32,7 +32,7 @@ export function PhoneFrame({ children, className }: PhoneFrameProps) {
           "w-[390px] h-[844px]",
           "rounded-[58px]",
           "p-[10px]",
-          "shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.4)]"
+          "shadow-[0_50px_120px_-20px_rgba(11,13,18,0.45),0_18px_40px_-10px_rgba(11,13,18,0.25)]"
         )}
         style={{
           background:
