@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowUp, Mic, Plus, Zap } from "lucide-react";
 import { ScreenShell } from "@/components/layout/ScreenShell";
-import { DebugPanel } from "@/components/ai/DebugPanel";
 import { cn } from "@/lib/cn";
 import type { AskDebug, AskResponse } from "@/lib/ai/types";
 
@@ -266,11 +265,6 @@ function Bubble({ msg }: { msg: Msg }) {
           {msg.time}
         </div>
       </div>
-      {!isUser && msg.debug && (
-        <div className="w-[88%]">
-          <DebugPanel debug={msg.debug} />
-        </div>
-      )}
     </div>
   );
 }

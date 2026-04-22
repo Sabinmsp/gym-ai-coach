@@ -9,7 +9,7 @@ import type { RetrievedChunk, UserProfile } from "./types";
 export interface LlmAnswer {
   text: string;
   model: string;
-  usedProvider: "openai" | "template-fallback";
+  usedProvider: "openai" | "ollama" | "template-fallback";
 }
 
 interface GenerateArgs {
@@ -24,10 +24,96 @@ export async function generateAnswer(args: GenerateArgs): Promise<LlmAnswer> {
     try {
       return await callOpenAi(args);
     } catch (err) {
-      console.warn("[ai] OpenAI failed, using template fallback:", err);
+      console.warn("[ai] OpenAI failed, trying next provider:", err);
     }
   }
+
+  if (await isOllamaUp()) {
+    try {
+      return await callOllama(args);
+    } catch (err) {
+      console.warn("[ai] Ollama failed, using template fallback:", err);
+    }
+  }
+
   return templateAnswer(args);
+}
+
+/* --------------------------------- Ollama --------------------------------- */
+
+const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
+
+let ollamaCheckedAt = 0;
+let ollamaIsUp = false;
+
+export async function isOllamaUp(): Promise<boolean> {
+  // Cache the availability probe for 30s so we don't hit it every request.
+  if (Date.now() - ollamaCheckedAt < 30_000) return ollamaIsUp;
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 800);
+    const res = await fetch(`${OLLAMA_URL}/api/tags`, {
+      signal: ctrl.signal,
+    });
+    clearTimeout(to);
+    ollamaIsUp = res.ok;
+  } catch {
+    ollamaIsUp = false;
+  }
+  ollamaCheckedAt = Date.now();
+  return ollamaIsUp;
+}
+
+async function callOllama({
+  systemPrompt,
+  userQuestion,
+  profile,
+  chunks,
+}: GenerateArgs): Promise<LlmAnswer> {
+  const contextBlock = chunks
+    .map((c, i) => `[${i + 1}] (${c.topic}) ${c.title}\n${c.text}`)
+    .join("\n\n");
+
+  const profileBlock = [
+    `Name: ${profile.name}`,
+    `Age: ${profile.age}`,
+    `Weight: ${profile.weightKg} kg`,
+    `Height: ${profile.heightCm} cm`,
+    `Goal: ${profile.goal}`,
+    `Diet: ${profile.diet}`,
+    `Experience: ${profile.experience}`,
+    `Training days / week: ${profile.trainingDaysPerWeek}`,
+    `Injuries / notes: ${profile.injuries || "none"}`,
+  ].join("\n");
+
+  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      stream: false,
+      options: {
+        temperature: 0.3,
+        num_predict: 220,
+      },
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `USER PROFILE:\n${profileBlock}\n\nRETRIEVED KNOWLEDGE:\n${contextBlock}\n\nQUESTION: ${userQuestion}`,
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Ollama chat failed: ${res.status}`);
+  const data = (await res.json()) as { message: { content: string } };
+  return {
+    text: data.message.content.trim(),
+    model: `ollama/${OLLAMA_MODEL}`,
+    usedProvider: "ollama",
+  };
 }
 
 async function callOpenAi({

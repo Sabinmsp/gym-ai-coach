@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const profile = await store.get(id);
   return NextResponse.json({
     profile,
-    stack: getStackInfo(),
+    stack: await getStackInfo(),
     storeName: store.name,
   });
 }

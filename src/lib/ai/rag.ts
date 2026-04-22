@@ -1,7 +1,7 @@
 import type { AskResponse, UserProfile } from "./types";
 import { getVectorStore, isRealVectorStore } from "./vectorStore";
 import { getProfileStore, isRealProfileStore } from "./profileStore";
-import { generateAnswer } from "./llm";
+import { generateAnswer, isOllamaUp } from "./llm";
 import { buildSystemPrompt } from "./prompt";
 import { LruCache, hashKey, normalizeQuestion } from "./cache";
 import { rateLimit } from "./rateLimit";
@@ -107,8 +107,7 @@ export async function ask({
         userQuestion: question,
         profile,
         chunks: retrieved,
-      }),
-    { model: process.env.OPENAI_MODEL ?? "template-fallback" }
+      })
   );
 
   /* ----------------------------- 7. Cache put ------------------------------ */
@@ -146,15 +145,19 @@ export async function ask({
 }
 
 /** For the Profile screen to tell the user what's wired up. */
-export function getStackInfo() {
+export async function getStackInfo() {
+  const llm = process.env.OPENAI_API_KEY
+    ? process.env.OPENAI_MODEL ?? "gpt-4o-mini"
+    : (await isOllamaUp())
+    ? `Ollama / ${process.env.OLLAMA_MODEL ?? "qwen2.5:7b"}`
+    : "Template fallback";
+
   return {
     vectorStore: isRealVectorStore() ? "Qdrant (cloud)" : "In-memory cosine",
     profileStore: isRealProfileStore() ? "Supabase" : "In-memory",
     embeddings: isRealEmbeddings()
       ? "OpenAI text-embedding-3-small"
       : "Hashed fallback (demo)",
-    llm: process.env.OPENAI_API_KEY
-      ? process.env.OPENAI_MODEL ?? "gpt-4o-mini"
-      : "Template fallback",
+    llm,
   };
 }
