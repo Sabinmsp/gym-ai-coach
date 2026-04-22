@@ -34,7 +34,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         {/* Header greeting */}
         <div className="mt-2 flex items-center justify-between animate-fade-in">
           <div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/45">
+            <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-white">
               Tuesday, Apr 21
             </div>
             <h1 className="mt-1 text-[26px] font-semibold tracking-tight">
@@ -57,24 +57,24 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           <div className="relative flex items-center gap-5">
             <ProgressRing value={caloriePct} size={108} stroke={10}>
               <div className="text-center">
-                <div className="text-[22px] font-semibold leading-none tracking-tight">
+                <div className="text-[22px] font-semibold leading-none tracking-tight text-white">
                   {Math.round(caloriePct * 100)}%
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wider text-white/50">
+                <div className="mt-1 text-[10px] uppercase tracking-wider text-white">
                   daily goal
                 </div>
               </div>
             </ProgressRing>
 
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+              <div className="text-[12px] font-medium uppercase tracking-[0.08em] text-white">
                 Today
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-[22px] font-semibold tracking-tight">
+                <span className="text-[22px] font-semibold tracking-tight text-white">
                   {dailySummary.caloriesEaten.toLocaleString()}
                 </span>
-                <span className="text-[13px] text-white/45">
+                <span className="text-[13px] text-white">
                   / {dailySummary.caloriesTarget.toLocaleString()} kcal
                 </span>
               </div>
@@ -159,27 +159,27 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                 }}
               />
               <div className="relative flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/15 text-brand ring-1 ring-brand/30">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/15 text-white ring-1 ring-brand/30">
                   <Dumbbell size={22} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium uppercase tracking-wider text-white/45">
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-white">
                     Push day · 6 exercises
                   </div>
                   <div className="mt-0.5 text-[16px] font-semibold tracking-tight">
                     Chest, Shoulders & Triceps
                   </div>
-                  <div className="mt-1.5 text-[12px] text-white/55">
+                  <div className="mt-1.5 text-[12px] text-white">
                     ~52 min · Moderate intensity
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-white/40" />
+                <ChevronRight size={18} className="text-white" />
               </div>
-              <div className="relative mt-4 flex items-center gap-3 text-[11px] text-white/55">
+              <div className="relative mt-4 flex items-center gap-3 text-[11px] text-white">
                 <Tag>Bench press</Tag>
                 <Tag>Incline DB</Tag>
                 <Tag>Lateral raise</Tag>
-                <span className="ml-auto text-white/35">+3 more</span>
+                <span className="ml-auto text-white">+3 more</span>
               </div>
             </div>
           </Card>
@@ -191,7 +191,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           style={{ animationDelay: "180ms" }}
         >
           <Card className="p-4">
-            <div className="flex items-center gap-2 text-white/60">
+            <div className="flex items-center gap-2 text-white">
               <Footprints size={14} />
               <span className="text-[11px] font-medium uppercase tracking-wider">
                 Steps
@@ -201,12 +201,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               {dailySummary.steps.toLocaleString()}
             </div>
             <ProgressBar value={stepsPct} className="mt-3" height={6} />
-            <div className="mt-2 text-[11px] text-white/45">
+            <div className="mt-2 text-[11px] text-white">
               Goal {dailySummary.stepsTarget.toLocaleString()}
             </div>
           </Card>
           <Card className="p-4">
-            <div className="flex items-center gap-2 text-white/60">
+            <div className="flex items-center gap-2 text-white">
               <Droplet size={14} />
               <span className="text-[11px] font-medium uppercase tracking-wider">
                 Hydration
@@ -216,7 +216,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               {dailySummary.waterDrunkL}L
             </div>
             <ProgressBar value={waterPct} className="mt-3" height={6} />
-            <div className="mt-2 text-[11px] text-white/45">
+            <div className="mt-2 text-[11px] text-white">
               Goal {dailySummary.waterTargetL}L
             </div>
           </Card>
@@ -228,14 +228,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           style={{ animationDelay: "240ms" }}
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-ink-950 shadow-glow">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white shadow-glow">
               <Sparkles size={16} strokeWidth={2.4} />
             </div>
             <div className="flex-1">
               <div className="text-[13px] font-semibold tracking-tight">
                 Tip from your coach
               </div>
-              <div className="mt-1 text-[13px] leading-relaxed text-white/70">
+              <div className="mt-1 text-[13px] leading-relaxed text-white">
                 You're 58g short on protein. A whey shake + Greek yogurt after
                 your workout closes the gap.
               </div>
@@ -258,7 +258,7 @@ function SectionHeader({
     <div className="flex items-center justify-between">
       <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
       {action && (
-        <button className="text-[12px] font-medium text-white/55 hover:text-white">
+        <button className="text-[12px] font-medium text-white hover:text-white">
           {action}
         </button>
       )}
@@ -269,11 +269,11 @@ function SectionHeader({
 function Avatar({ initials, streak }: { initials: string; streak: number }) {
   return (
     <div className="relative">
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-glow to-brand text-ink-950 text-[13px] font-bold tracking-tight shadow-[0_8px_20px_-8px_rgba(163,255,18,0.55)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-glow to-brand text-white text-[13px] font-bold tracking-tight shadow-[0_8px_20px_-8px_rgba(163,255,18,0.55)]">
         {initials}
       </div>
       <div className="absolute -bottom-1.5 -right-1.5 flex items-center gap-0.5 rounded-full bg-ink-900/90 px-1.5 py-0.5 text-[10px] font-semibold backdrop-blur ring-1 ring-white/10">
-        <Flame size={9} className="text-orange-400" />
+        <Flame size={9} className="text-white" />
         {streak}
       </div>
     </div>
@@ -307,7 +307,7 @@ function ActionTile({
         className={
           "flex h-9 w-9 items-center justify-center rounded-xl ring-1 " +
           (accent
-            ? "bg-brand text-ink-950 ring-brand/60 shadow-[0_6px_20px_-6px_rgba(163,255,18,0.7)]"
+            ? "bg-brand text-white ring-brand/60 shadow-[0_6px_20px_-6px_rgba(163,255,18,0.7)]"
             : "bg-white/5 text-white ring-white/10")
         }
       >
@@ -316,10 +316,10 @@ function ActionTile({
       <div className="mt-3 text-[14px] font-semibold tracking-tight">
         {label}
       </div>
-      <div className="mt-0.5 text-[11.5px] text-white/50">{sub}</div>
+      <div className="mt-0.5 text-[11.5px] text-white">{sub}</div>
       <ChevronRight
         size={14}
-        className="absolute right-3 top-3 text-white/30 transition-transform group-hover:translate-x-0.5"
+        className="absolute right-3 top-3 text-white transition-transform group-hover:translate-x-0.5"
       />
     </button>
   );
@@ -335,12 +335,12 @@ function MicroStat({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-2 text-[12px] text-white/60">
-      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/5 text-white/70">
+    <div className="flex items-center gap-2 text-[12px] text-white">
+      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/5 text-white">
         {icon}
       </span>
-      <span className="text-white/45">{label}</span>
-      <span className="ml-auto font-medium text-white/85">{value}</span>
+      <span className="text-white">{label}</span>
+      <span className="ml-auto font-medium text-white">{value}</span>
     </div>
   );
 }
@@ -360,7 +360,7 @@ function MiniGoal({
 }) {
   return (
     <div className="rounded-2xl border border-white/6 bg-white/[0.03] p-3">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/50">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white">
         {icon}
         {label}
       </div>
@@ -368,7 +368,7 @@ function MiniGoal({
         <span className="text-[16px] font-semibold tracking-tight">
           {value}
         </span>
-        <span className="text-[11px] text-white/40">/ {target}</span>
+        <span className="text-[11px] text-white">/ {target}</span>
       </div>
       <ProgressBar value={pct} className="mt-2" height={5} />
     </div>
@@ -377,7 +377,7 @@ function MiniGoal({
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/65">
+    <span className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white">
       {children}
     </span>
   );

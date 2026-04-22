@@ -48,7 +48,7 @@ export function PhoneFrame({ children, className }: PhoneFrameProps) {
           }}
         >
           {/* Screen */}
-          <div className="relative w-full h-full rounded-[48px] overflow-hidden bg-ink-950">
+          <div className="relative w-full h-full rounded-[48px] overflow-hidden bg-ink-950 text-white">
             {/* Status bar */}
             <StatusBar />
 
@@ -56,7 +56,7 @@ export function PhoneFrame({ children, className }: PhoneFrameProps) {
             <DynamicIsland />
 
             {/* Screen content */}
-            <div className="absolute inset-0">{children}</div>
+            <div className="absolute inset-0 text-white">{children}</div>
 
             {/* Home indicator */}
             <div className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 h-[5px] w-[134px] rounded-full bg-white/85" />
@@ -85,7 +85,7 @@ export function PhoneFrame({ children, className }: PhoneFrameProps) {
 
 function StatusBar() {
   return (
-    <div className="pointer-events-none absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-7 pt-4 text-[13px] font-semibold tracking-tight text-white/95">
+    <div className="pointer-events-none absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-7 pt-4 text-[13px] font-semibold tracking-tight text-white">
       <span>9:41</span>
       <div className="flex items-center gap-1.5 opacity-95">
         {/* Signal */}

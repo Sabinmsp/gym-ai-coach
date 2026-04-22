@@ -35,7 +35,7 @@ export function TabBar({ active, onChange }: TabBarProps) {
               onClick={() => onChange(key)}
               className={cn(
                 "group relative flex-1 flex flex-col items-center gap-0.5 rounded-2xl py-2 transition-all",
-                isActive ? "text-brand" : "text-white/55 hover:text-white"
+                isActive ? "text-brand" : "text-white hover:text-white"
               )}
               aria-label={label}
             >

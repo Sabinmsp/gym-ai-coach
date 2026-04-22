@@ -1,6 +1,12 @@
 import type { KnowledgeChunk, RetrievedChunk } from "./types";
 import { KNOWLEDGE_CHUNKS } from "./knowledgeBase";
-import { embed, embedFallback, cosineSim, isRealEmbeddings } from "./embeddings";
+import {
+  embed,
+  embedFallback,
+  cosineSim,
+  isRealEmbeddings,
+  tokenize,
+} from "./embeddings";
 
 /**
  * Vector store abstraction. Default = in-memory cosine similarity.
@@ -19,12 +25,17 @@ class InMemoryStore implements VectorStore {
   private seeded = false;
   private chunks: KnowledgeChunk[] = [];
 
+  // BM25 lexical index — used as a strong signal when real embeddings aren't wired.
+  private termFreq: Array<Map<string, number>> = [];
+  private docFreq = new Map<string, number>();
+  private avgDocLen = 0;
+  private docLens: number[] = [];
+
   async ready() {
     if (this.seeded) return;
 
     // Pre-embed all chunks once per process.
     if (isRealEmbeddings()) {
-      // Do this sequentially to be gentle on rate limits for the demo seed.
       for (const c of KNOWLEDGE_CHUNKS) {
         this.chunks.push({ ...c, embedding: await embed(c.text) });
       }
@@ -33,15 +44,69 @@ class InMemoryStore implements VectorStore {
         this.chunks.push({ ...c, embedding: embedFallback(c.text) });
       }
     }
+
+    // Build BM25 index over title + text (title weighted 3x).
+    let totalLen = 0;
+    for (const c of this.chunks) {
+      const tokens = [
+        ...tokenize(c.title),
+        ...tokenize(c.title),
+        ...tokenize(c.title),
+        ...tokenize(c.text),
+        ...tokenize(c.topic),
+      ];
+      const tf = new Map<string, number>();
+      for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
+      this.termFreq.push(tf);
+      this.docLens.push(tokens.length);
+      totalLen += tokens.length;
+      for (const term of tf.keys()) {
+        this.docFreq.set(term, (this.docFreq.get(term) ?? 0) + 1);
+      }
+    }
+    this.avgDocLen = totalLen / Math.max(1, this.chunks.length);
     this.seeded = true;
+  }
+
+  private bm25(queryTokens: string[], docIdx: number): number {
+    const k1 = 1.5;
+    const b = 0.75;
+    const N = this.chunks.length;
+    const tf = this.termFreq[docIdx];
+    const dl = this.docLens[docIdx];
+    let score = 0;
+    for (const q of queryTokens) {
+      const f = tf.get(q) ?? 0;
+      if (f === 0) continue;
+      const df = this.docFreq.get(q) ?? 0;
+      const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+      const norm = f * (k1 + 1);
+      const denom = f + k1 * (1 - b + (b * dl) / this.avgDocLen);
+      score += idf * (norm / denom);
+    }
+    return score;
   }
 
   async search(query: string, k: number): Promise<RetrievedChunk[]> {
     await this.ready();
     const qvec = await embed(query);
-    const scored = this.chunks.map((c) => ({
+    const qTokens = tokenize(query);
+
+    // Vector sim (hashed when no OpenAI, real otherwise)
+    const vecScores = this.chunks.map((c) => cosineSim(qvec, c.embedding ?? []));
+    // BM25 lexical
+    const lexScores = this.chunks.map((_, i) => this.bm25(qTokens, i));
+
+    // Normalize so both signals live in [0, 1] before blending.
+    const vmax = Math.max(0.0001, ...vecScores);
+    const lmax = Math.max(0.0001, ...lexScores);
+
+    // Hybrid: lexical dominates when no real embeddings, otherwise favor vectors.
+    const w = isRealEmbeddings() ? { v: 0.7, l: 0.3 } : { v: 0.35, l: 0.65 };
+
+    const scored = this.chunks.map((c, i) => ({
       ...c,
-      score: cosineSim(qvec, c.embedding ?? []),
+      score: w.v * (vecScores[i] / vmax) + w.l * (lexScores[i] / lmax),
     }));
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, k);

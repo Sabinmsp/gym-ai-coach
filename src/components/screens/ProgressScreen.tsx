@@ -20,7 +20,7 @@ export function ProgressScreen() {
             <h1 className="text-[22px] font-semibold tracking-tight">
               Progress
             </h1>
-            <div className="mt-0.5 text-[12px] text-white/50">
+            <div className="mt-0.5 text-[12px] text-white">
               Last 6 weeks · Everything trending up
             </div>
           </div>
@@ -47,16 +47,16 @@ export function ProgressScreen() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-white/50">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-white">
                 Weekly streak
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-[28px] font-semibold tracking-tight">
                   {user.streakDays}
                 </span>
-                <span className="text-[13px] text-white/50">days</span>
+                <span className="text-[13px] text-white">days</span>
               </div>
-              <div className="mt-0.5 text-[12px] text-white/55">
+              <div className="mt-0.5 text-[12px] text-white">
                 Longest yet. Keep it lit.
               </div>
             </div>
@@ -71,13 +71,13 @@ export function ProgressScreen() {
                     d.done
                       ? "bg-brand/15 text-brand ring-1 ring-brand/40"
                       : d.label === "Rest"
-                      ? "bg-white/[0.03] text-white/35 border border-dashed border-white/10"
-                      : "bg-white/5 text-white/55 border border-white/8"
+                      ? "bg-white/[0.03] text-white border border-dashed border-white/10"
+                      : "bg-white/5 text-white border border-white/8"
                   )}
                 >
                   {d.done ? "✓" : d.label === "Rest" ? "·" : d.label[0]}
                 </div>
-                <div className="text-[10px] text-white/45">{d.day}</div>
+                <div className="text-[10px] text-white">{d.day}</div>
               </div>
             ))}
           </div>
@@ -87,7 +87,7 @@ export function ProgressScreen() {
         <Card className="mt-4 p-4 animate-slide-up" style={{ animationDelay: "80ms" }}>
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2 text-white/60">
+              <div className="flex items-center gap-2 text-white">
                 <TrendingDown size={14} className="text-brand" />
                 <span className="text-[11px] font-medium uppercase tracking-wider">
                   Weight
@@ -101,7 +101,7 @@ export function ProgressScreen() {
                   −2.2 kg
                 </span>
               </div>
-              <div className="text-[11px] text-white/45">
+              <div className="text-[11px] text-white">
                 vs. 6 weeks ago
               </div>
             </div>
@@ -115,7 +115,7 @@ export function ProgressScreen() {
         <Card className="mt-4 p-4 animate-slide-up" style={{ animationDelay: "140ms" }}>
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2 text-white/60">
+              <div className="flex items-center gap-2 text-white">
                 <Dumbbell size={14} />
                 <span className="text-[11px] font-medium uppercase tracking-wider">
                   Workout completion
@@ -123,7 +123,7 @@ export function ProgressScreen() {
               </div>
               <div className="mt-1 text-[24px] font-semibold tracking-tight">
                 {done} / {total}
-                <span className="ml-1 text-[12px] font-medium text-white/45">
+                <span className="ml-1 text-[12px] font-medium text-white">
                   this week
                 </span>
               </div>
@@ -132,7 +132,7 @@ export function ProgressScreen() {
               <div className="text-[11px] font-medium text-brand">
                 {Math.round(completionPct * 100)}%
               </div>
-              <div className="text-[10px] text-white/40">adherence</div>
+              <div className="text-[10px] text-white">adherence</div>
             </div>
           </div>
           <ProgressBar value={completionPct} className="mt-3" />
@@ -141,7 +141,7 @@ export function ProgressScreen() {
         {/* Protein target */}
         <Card className="mt-4 p-4 animate-slide-up" style={{ animationDelay: "200ms" }}>
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 text-white/60">
+            <div className="flex items-center gap-2 text-white">
               <Beef size={14} />
               <span className="text-[11px] font-medium uppercase tracking-wider">
                 Protein target — 7 days
@@ -160,7 +160,7 @@ export function ProgressScreen() {
                     boxShadow: "0 -4px 18px rgba(163,255,18,0.35)",
                   }}
                 />
-                <span className="text-[9.5px] text-white/40">
+                <span className="text-[9.5px] text-white">
                   {["M", "T", "W", "T", "F", "S", "S"][i]}
                 </span>
               </div>
@@ -170,7 +170,7 @@ export function ProgressScreen() {
 
         {/* Records */}
         <div className="mt-6 animate-slide-up" style={{ animationDelay: "260ms" }}>
-          <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-white/45 px-1">
+          <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-white px-1">
             Personal records
           </div>
           <div className="mt-2 grid grid-cols-2 gap-3">
@@ -189,7 +189,7 @@ export function ProgressScreen() {
 
 function Legend() {
   return (
-    <div className="flex items-center gap-2 text-[10.5px] text-white/45">
+    <div className="flex items-center gap-2 text-[10.5px] text-white">
       <span className="flex items-center gap-1">
         <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(163,255,18,0.8)]" />
         actual
@@ -279,7 +279,7 @@ function PrCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/6 bg-white/[0.03] p-3">
-      <div className="text-[11px] font-medium uppercase tracking-wider text-white/45">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-white">
         {lift}
       </div>
       <div className="mt-1 text-[16px] font-semibold tracking-tight">

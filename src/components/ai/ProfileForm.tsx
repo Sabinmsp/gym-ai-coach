@@ -87,7 +87,7 @@ export function ProfileForm({ onSaved }: Props) {
 
   if (loading) {
     return (
-      <div className="flex h-32 items-center justify-center text-white/40">
+      <div className="flex h-32 items-center justify-center text-white">
         <Loader2 size={16} className="animate-spin mr-2" /> Loading profile…
       </div>
     );
@@ -98,7 +98,7 @@ export function ProfileForm({ onSaved }: Props) {
       {/* Stack badges — where the engineering lives */}
       {stack && (
         <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">
+          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white">
             <Sparkles size={10} className="text-brand" />
             AI stack
           </div>
@@ -124,8 +124,8 @@ export function ProfileForm({ onSaved }: Props) {
               value={stack.llm}
             />
           </div>
-          <div className="mt-2 text-[10px] text-white/35">
-            Writes go to: <span className="text-white/60">{storeName}</span>
+          <div className="mt-2 text-[10px] text-white">
+            Writes go to: <span className="text-white">{storeName}</span>
           </div>
         </div>
       )}
@@ -242,7 +242,7 @@ function Input({
         colSpan && "col-span-2"
       )}
     >
-      <span className="text-[10px] font-medium uppercase tracking-wider text-white/45">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-white">
         {label}
       </span>
       <input
@@ -268,7 +268,7 @@ function Select({
 }) {
   return (
     <label className="flex flex-col gap-1 rounded-2xl border border-white/6 bg-white/[0.03] px-3 py-2">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-white/45">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-white">
         {label}
       </span>
       <select
@@ -297,7 +297,7 @@ function Textarea({
 }) {
   return (
     <label className="col-span-2 flex flex-col gap-1 rounded-2xl border border-white/6 bg-white/[0.03] px-3 py-2">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-white/45">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-white">
         {label}
       </span>
       <textarea
@@ -325,8 +325,8 @@ function StackRow({
       <span className="flex h-4 w-4 items-center justify-center rounded-md bg-brand/10 text-brand ring-1 ring-brand/25">
         {icon}
       </span>
-      <span className="text-white/45">{label}</span>
-      <span className="ml-auto truncate font-medium text-white/80">
+      <span className="text-white">{label}</span>
+      <span className="ml-auto truncate font-medium text-white">
         {value}
       </span>
     </div>

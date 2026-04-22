@@ -156,7 +156,7 @@ export function AskAiScreen() {
 
             {messages.length === 1 && !thinking && (
               <div className="mt-4">
-                <div className="mb-2 text-center text-[10.5px] uppercase tracking-wider text-white/40">
+                <div className="mb-2 text-center text-[10.5px] uppercase tracking-wider text-white">
                   Try asking
                 </div>
                 <div className="space-y-1.5">
@@ -164,7 +164,7 @@ export function AskAiScreen() {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-[13px] text-white/75 transition-all hover:border-brand/30 hover:bg-brand/[0.05] hover:text-white"
+                      className="w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-[13px] text-white transition-all hover:border-brand/30 hover:bg-brand/[0.05] hover:text-white"
                     >
                       {s}
                     </button>
@@ -179,7 +179,7 @@ export function AskAiScreen() {
         <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pt-3 pb-6 bg-gradient-to-t from-ink-950 via-ink-950/95 to-transparent">
           <div className="flex items-end gap-2">
             <button
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70 transition-colors hover:bg-white/10"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
               aria-label="Attach"
             >
               <Plus size={18} />
@@ -198,7 +198,7 @@ export function AskAiScreen() {
                     }
                   }}
                   placeholder="Ask your coach anything…"
-                  className="max-h-28 flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/35 focus:outline-none"
+                  className="max-h-28 flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white focus:outline-none"
                 />
                 <button
                   onClick={() => send()}
@@ -207,7 +207,7 @@ export function AskAiScreen() {
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all",
                     input.trim() && !thinking
                       ? "bg-brand text-ink-950 shadow-[0_0_16px_rgba(163,255,18,0.5)]"
-                      : "bg-white/10 text-white/50"
+                      : "bg-white/10 text-white"
                   )}
                   aria-label="Send"
                 >
@@ -220,7 +220,7 @@ export function AskAiScreen() {
               </div>
             </div>
           </div>
-          <div className="mt-2 text-center text-[10.5px] text-white/35">
+          <div className="mt-2 text-center text-[10.5px] text-white">
             Grounded on your profile + knowledge base · no hallucinations
           </div>
         </div>
@@ -231,7 +231,7 @@ export function AskAiScreen() {
 
 function SystemHint() {
   return (
-    <div className="mx-auto w-fit rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] text-white/45 backdrop-blur">
+    <div className="mx-auto w-fit rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] text-white backdrop-blur">
       Today · now
     </div>
   );
@@ -260,7 +260,7 @@ function Bubble({ msg }: { msg: Msg }) {
         <div
           className={cn(
             "mt-1 text-[10px]",
-            isUser ? "text-ink-950/50" : "text-white/35"
+            isUser ? "text-ink-950/50" : "text-white"
           )}
         >
           {msg.time}
@@ -285,7 +285,7 @@ function TypingBubble() {
             <Dot delay={120} />
             <Dot delay={240} />
           </div>
-          <span className="text-[10.5px] text-white/45">
+          <span className="text-[10.5px] text-white">
             retrieving · reasoning
           </span>
         </div>

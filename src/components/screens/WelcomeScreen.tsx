@@ -37,14 +37,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         {/* Logo */}
         <div className="flex items-center gap-2.5 animate-fade-in">
           <LogoMark />
-          <span className="text-[15px] font-semibold tracking-tight text-white/90">
+          <span className="text-[15px] font-semibold tracking-tight text-white">
             Gym AI Coach
           </span>
         </div>
 
         {/* Hero copy */}
         <div className="mt-14 animate-slide-up">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70 backdrop-blur">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
             <Sparkles size={12} className="text-brand" />
             <span>AI-powered · Personalized daily</span>
           </div>
@@ -54,7 +54,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             <span className="text-gradient-brand">personal trainer</span>.
           </h1>
 
-          <p className="mt-4 text-[15px] leading-relaxed text-white/60 text-balance">
+          <p className="mt-4 text-[15px] leading-relaxed text-white text-balance">
             Smart workouts, nutrition and recovery tuned to your body — so you
             show up, lift better, and actually see progress.
           </p>
@@ -87,7 +87,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             Get Started
             <ArrowRight size={18} strokeWidth={2.4} />
           </Button>
-          <p className="mt-3 text-center text-[12px] text-white/45">
+          <p className="mt-3 text-center text-[12px] text-white">
             No credit card · 7-day free trial
           </p>
         </div>
@@ -112,7 +112,7 @@ function FeatureRow({
       </div>
       <div className="min-w-0">
         <div className="text-[14px] font-semibold tracking-tight">{label}</div>
-        <div className="text-[12px] text-white/50">{sub}</div>
+        <div className="text-[12px] text-white">{sub}</div>
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ export function CardTitle({
   return (
     <div
       className={cn(
-        "text-[13px] font-medium uppercase tracking-[0.08em] text-white/50",
+        "text-[13px] font-medium uppercase tracking-[0.08em] text-white",
         className
       )}
     >

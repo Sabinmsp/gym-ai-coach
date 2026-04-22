@@ -17,7 +17,7 @@ export function ScreenShell({
   flair = "home",
 }: ScreenShellProps) {
   return (
-    <div className={cn("relative w-full h-full overflow-hidden bg-ink-950", className)}>
+    <div className={cn("relative w-full h-full overflow-hidden bg-ink-950 text-white", className)}>
       {/* Decorative ambient blobs inside the phone screen */}
       {flair !== "none" && (
         <>

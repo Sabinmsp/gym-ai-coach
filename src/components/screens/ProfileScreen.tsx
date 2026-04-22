@@ -22,7 +22,7 @@ export function ProfileScreen() {
           </div>
         </div>
 
-        <p className="mt-1 text-[12px] text-white/50">
+        <p className="mt-1 text-[12px] text-white">
           Your profile grounds every AI answer. Save it and ask the coach.
         </p>
 
@@ -57,7 +57,7 @@ export function ProfileScreen() {
                 <div className="text-[17px] font-semibold tracking-tight">
                   Alex Riley
                 </div>
-                <div className="text-[12px] text-white/50">
+                <div className="text-[12px] text-white">
                   Member since Jan 2025 · Pro plan
                 </div>
               </div>
@@ -82,7 +82,7 @@ function IconBtn({
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10"
       {...props}
     >
       {children}

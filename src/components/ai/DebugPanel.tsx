@@ -42,10 +42,10 @@ export function DebugPanel({ debug }: Props) {
             <Zap size={12} />
           </div>
           <div className="text-left">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/75">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-white">
               AI pipeline
             </div>
-            <div className="text-[10.5px] text-white/45">
+            <div className="text-[10.5px] text-white">
               {debug.totalMs} ms ·{" "}
               {debug.cacheHit ? "cache hit" : `${debug.retrieved.length} chunks`}{" "}
               · {debug.model}
@@ -55,7 +55,7 @@ export function DebugPanel({ debug }: Props) {
         <ChevronDown
           size={14}
           className={cn(
-            "text-white/40 transition-transform",
+            "text-white transition-transform",
             open && "rotate-180"
           )}
         />
@@ -78,16 +78,16 @@ export function DebugPanel({ debug }: Props) {
                       s.status === "ok"
                         ? "bg-brand/10 text-brand ring-brand/30"
                         : s.status === "skipped"
-                        ? "bg-white/5 text-white/50 ring-white/10"
+                        ? "bg-white/5 text-white ring-white/10"
                         : "bg-red-500/10 text-red-300 ring-red-500/30"
                     )}
                   >
                     <Icon size={10} />
                   </span>
-                  <span className="flex-1 truncate text-[11.5px] text-white/80">
+                  <span className="flex-1 truncate text-[11.5px] text-white">
                     {s.name}
                   </span>
-                  <span className="font-mono text-[10.5px] text-white/45">
+                  <span className="font-mono text-[10.5px] text-white">
                     {s.durationMs}ms
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export function DebugPanel({ debug }: Props) {
           {/* Retrieved chunks */}
           {!debug.cacheHit && debug.retrieved.length > 0 && (
             <div>
-              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
+              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white">
                 Retrieved context
               </div>
               <div className="space-y-1">
@@ -110,7 +110,7 @@ export function DebugPanel({ debug }: Props) {
                     <span className="rounded-md bg-brand/10 px-1.5 py-0.5 font-mono text-[9.5px] text-brand ring-1 ring-brand/25">
                       {r.score.toFixed(2)}
                     </span>
-                    <span className="truncate text-[11px] text-white/75">
+                    <span className="truncate text-[11px] text-white">
                       {r.title}
                     </span>
                   </div>
@@ -121,8 +121,8 @@ export function DebugPanel({ debug }: Props) {
 
           {/* Rate limit */}
           <div className="flex items-center justify-between rounded-lg bg-black/20 px-2.5 py-1.5 text-[10.5px]">
-            <span className="text-white/55">Rate limit</span>
-            <span className="font-mono text-white/75">
+            <span className="text-white">Rate limit</span>
+            <span className="font-mono text-white">
               {debug.rateLimit.remaining}/{debug.rateLimit.limit} left ·
               resets in {Math.round(debug.rateLimit.resetMs / 1000)}s
             </span>
@@ -130,10 +130,10 @@ export function DebugPanel({ debug }: Props) {
 
           {/* System prompt peek */}
           <details className="group rounded-lg bg-black/20 px-2.5 py-1.5">
-            <summary className="cursor-pointer list-none text-[10.5px] text-white/55">
+            <summary className="cursor-pointer list-none text-[10.5px] text-white">
               System prompt preview ▾
             </summary>
-            <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-white/65">
+            <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-white">
               {debug.promptPreview}
             </pre>
           </details>
