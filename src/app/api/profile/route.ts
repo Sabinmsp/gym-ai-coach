@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEMO_USER_ID, getProfileStore } from "@/lib/ai/profileStore";
 import type { UserProfile } from "@/lib/ai/types";
-import { getStackInfo } from "@/lib/ai/rag";
 
 export const runtime = "nodejs";
 
@@ -27,11 +26,7 @@ export async function GET(req: NextRequest) {
   const id = url.searchParams.get("id") ?? DEMO_USER_ID;
   const store = getProfileStore();
   const profile = await store.get(id);
-  return NextResponse.json({
-    profile,
-    stack: await getStackInfo(),
-    storeName: store.name,
-  });
+  return NextResponse.json({ profile });
 }
 
 export async function PUT(req: NextRequest) {
@@ -46,5 +41,5 @@ export async function PUT(req: NextRequest) {
   const store = getProfileStore();
   const saved = await store.upsert(profile);
 
-  return NextResponse.json({ profile: saved, storeName: store.name });
+  return NextResponse.json({ profile: saved });
 }

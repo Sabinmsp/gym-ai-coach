@@ -1,20 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2, Save, Sparkles, Database, Search, Brain } from "lucide-react";
+import { Check, Loader2, Save } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { UserProfile } from "@/lib/ai/types";
 
 interface Props {
   onSaved?: (p: UserProfile) => void;
 }
-
-type StackInfo = {
-  vectorStore: string;
-  profileStore: string;
-  embeddings: string;
-  llm: string;
-};
 
 const EMPTY: UserProfile = {
   id: "demo-user",
@@ -32,8 +25,6 @@ const EMPTY: UserProfile = {
 
 export function ProfileForm({ onSaved }: Props) {
   const [profile, setProfile] = useState<UserProfile>(EMPTY);
-  const [stack, setStack] = useState<StackInfo | null>(null);
-  const [storeName, setStoreName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -41,17 +32,9 @@ export function ProfileForm({ onSaved }: Props) {
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
-      .then(
-        (d: {
-          profile: UserProfile | null;
-          stack: StackInfo;
-          storeName: string;
-        }) => {
-          if (d.profile) setProfile(d.profile);
-          setStack(d.stack);
-          setStoreName(d.storeName);
-        }
-      )
+      .then((d: { profile: UserProfile | null }) => {
+        if (d.profile) setProfile(d.profile);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -65,12 +48,8 @@ export function ProfileForm({ onSaved }: Props) {
         body: JSON.stringify(profile),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = (await res.json()) as {
-        profile: UserProfile;
-        storeName: string;
-      };
+      const j = (await res.json()) as { profile: UserProfile };
       setProfile(j.profile);
-      setStoreName(j.storeName);
       setJustSaved(true);
       onSaved?.(j.profile);
       setTimeout(() => setJustSaved(false), 1400);
@@ -95,42 +74,6 @@ export function ProfileForm({ onSaved }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Stack badges — where the engineering lives */}
-      {stack && (
-        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-            <Sparkles size={10} className="text-brand" />
-            AI stack
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 text-[10.5px]">
-            <StackRow
-              icon={<Database size={10} />}
-              label="Profile"
-              value={stack.profileStore}
-            />
-            <StackRow
-              icon={<Search size={10} />}
-              label="Vectors"
-              value={stack.vectorStore}
-            />
-            <StackRow
-              icon={<Brain size={10} />}
-              label="Embeddings"
-              value={stack.embeddings}
-            />
-            <StackRow
-              icon={<Sparkles size={10} />}
-              label="LLM"
-              value={stack.llm}
-            />
-          </div>
-          <div className="mt-2 text-[10px] text-white">
-            Writes go to: <span className="text-white">{storeName}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Editable fields */}
       <div className="grid grid-cols-2 gap-2">
         <Input
           label="Name"
@@ -188,7 +131,7 @@ export function ProfileForm({ onSaved }: Props) {
           colSpan
         />
         <Textarea
-          label="Injuries / notes (fed to AI on every question)"
+          label="Injuries / notes"
           value={profile.injuries}
           onChange={(v) => field("injuries", v)}
         />
@@ -311,24 +254,3 @@ function Textarea({
   );
 }
 
-function StackRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-1.5 rounded-lg bg-black/20 px-2 py-1.5">
-      <span className="flex h-4 w-4 items-center justify-center rounded-md bg-brand/10 text-brand ring-1 ring-brand/25">
-        {icon}
-      </span>
-      <span className="text-white">{label}</span>
-      <span className="ml-auto truncate font-medium text-white">
-        {value}
-      </span>
-    </div>
-  );
-}

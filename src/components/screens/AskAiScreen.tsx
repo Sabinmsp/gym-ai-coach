@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, ArrowUp, Mic, Plus, Zap } from "lucide-react";
+import { Sparkles, ArrowUp, Mic, Plus } from "lucide-react";
 import { ScreenShell } from "@/components/layout/ScreenShell";
 import { cn } from "@/lib/cn";
-import type { AskDebug, AskResponse } from "@/lib/ai/types";
 
 type Msg = {
   id: string;
   role: "user" | "ai";
   text: string;
   time: string;
-  debug?: AskDebug;
   pending?: boolean;
   error?: boolean;
 };
@@ -20,7 +18,7 @@ const WELCOME: Msg = {
   id: "welcome",
   role: "ai",
   text:
-    "Hey Alex — I'm your Coach AI. I have your profile (goal, weight, injuries) and a fitness knowledge base. Ask me anything.\n\nTry: \"how much protein should I eat?\" or \"my shoulder is sore, what can I do?\"",
+    "Hey Alex — I'm your Coach AI. Ask me anything about training, nutrition, or recovery.\n\nTry: \"how much protein should I eat?\" or \"my shoulder is sore, what can I do?\"",
   time: nowTime(),
 };
 
@@ -86,7 +84,7 @@ export function AskAiScreen() {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      const data = (await res.json()) as AskResponse;
+      const data = (await res.json()) as { answer: string };
       setMessages((m) => [
         ...m,
         {
@@ -94,7 +92,6 @@ export function AskAiScreen() {
           role: "ai",
           text: data.answer,
           time: nowTime(),
-          debug: data.debug,
         },
       ]);
     } catch (err) {
@@ -130,13 +127,7 @@ export function AskAiScreen() {
               <div className="text-[15px] font-semibold tracking-tight">
                 Coach AI
               </div>
-              <div className="text-[11px] text-emerald-400">
-                Grounded on your profile · RAG
-              </div>
-            </div>
-            <div className="flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
-              <Zap size={10} />
-              live
+              <div className="text-[11px] text-emerald-400">Online</div>
             </div>
           </div>
         </div>
@@ -219,8 +210,8 @@ export function AskAiScreen() {
               </div>
             </div>
           </div>
-          <div className="mt-2 text-center text-[10.5px] text-white">
-            Grounded on your profile + knowledge base · no hallucinations
+          <div className="mt-2 text-center text-[10.5px] text-white/60">
+            Coach AI can make mistakes. Check important info.
           </div>
         </div>
       </div>
@@ -279,9 +270,7 @@ function TypingBubble() {
             <Dot delay={120} />
             <Dot delay={240} />
           </div>
-          <span className="text-[10.5px] text-white">
-            retrieving · reasoning
-          </span>
+          <span className="text-[10.5px] text-white/60">typing…</span>
         </div>
       </div>
     </div>
