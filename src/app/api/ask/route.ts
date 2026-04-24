@@ -36,11 +36,7 @@ export async function POST(req: NextRequest) {
     "local";
 
   const result = await ask({ userId, question, clientKey });
-  const body =
-    result.status === 200 && result.body && typeof result.body === "object"
-      ? { answer: (result.body as { answer?: string }).answer ?? "" }
-      : result.body;
-  return NextResponse.json(body, {
+  return NextResponse.json(result.body, {
     status: result.status,
     headers: {
       "Cache-Control": "no-store",

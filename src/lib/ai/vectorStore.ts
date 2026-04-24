@@ -2,10 +2,11 @@ import type { KnowledgeChunk, RetrievedChunk } from "./types";
 import { KNOWLEDGE_CHUNKS } from "./knowledgeBase";
 import {
   embed,
-  embedFallback,
   cosineSim,
   isRealEmbeddings,
   tokenize,
+  getEmbedProvider,
+  getEmbedDim,
 } from "./embeddings";
 
 /**
@@ -34,15 +35,10 @@ class InMemoryStore implements VectorStore {
   async ready() {
     if (this.seeded) return;
 
-    // Pre-embed all chunks once per process.
-    if (isRealEmbeddings()) {
-      for (const c of KNOWLEDGE_CHUNKS) {
-        this.chunks.push({ ...c, embedding: await embed(c.text) });
-      }
-    } else {
-      for (const c of KNOWLEDGE_CHUNKS) {
-        this.chunks.push({ ...c, embedding: embedFallback(c.text) });
-      }
+    // Pre-embed all chunks once per process. embed() routes to the active
+    // provider (OpenAI / Ollama / hashed fallback) automatically.
+    for (const c of KNOWLEDGE_CHUNKS) {
+      this.chunks.push({ ...c, embedding: await embed(c.text) });
     }
 
     // Build BM25 index over title + text (title weighted 3x).
@@ -194,6 +190,144 @@ class QdrantStore implements VectorStore {
   }
 }
 
+/* ----------------------- Supabase pgvector implementation ---------------- */
+
+/**
+ * Uses Supabase Postgres + the `pgvector` extension to store and search the
+ * knowledge chunks. Calls a `match_kb_chunks(query_embedding, match_count)`
+ * SQL function via PostgREST and upserts chunks into a `kb_chunks` table.
+ *
+ * Expected schema (run once in Supabase SQL editor):
+ *
+ *   create extension if not exists vector;
+ *   create table kb_chunks (
+ *     id text primary key, topic text, title text, content text,
+ *     embedding vector(768)
+ *   );
+ *   create index on kb_chunks using hnsw (embedding vector_cosine_ops);
+ *   create or replace function match_kb_chunks(
+ *     query_embedding vector(768), match_count int default 4
+ *   ) returns table (id text, topic text, title text, content text, score float)
+ *   language sql stable as $$
+ *     select id, topic, title, content,
+ *            1 - (embedding <=> query_embedding) as score
+ *       from kb_chunks where embedding is not null
+ *       order by embedding <=> query_embedding limit match_count;
+ *   $$;
+ */
+class SupabaseVectorStore implements VectorStore {
+  name = "supabase-pgvector";
+  private url: string;
+  private key: string;
+  private seeded = false;
+  private seedingPromise: Promise<void> | null = null;
+
+  constructor() {
+    this.url = process.env.SUPABASE_URL!.replace(/\/$/, "");
+    this.key = process.env.SUPABASE_SERVICE_KEY!;
+  }
+
+  private headers(extra: Record<string, string> = {}) {
+    return {
+      apikey: this.key,
+      Authorization: `Bearer ${this.key}`,
+      "Content-Type": "application/json",
+      ...extra,
+    };
+  }
+
+  async ready(): Promise<void> {
+    if (this.seeded) return;
+    if (this.seedingPromise) return this.seedingPromise;
+    this.seedingPromise = this.seed();
+    return this.seedingPromise;
+  }
+
+  private async seed(): Promise<void> {
+    // Cheap probe: count rows already in the table. Skip seeding if populated.
+    const head = await fetch(
+      `${this.url}/rest/v1/kb_chunks?select=id`,
+      { headers: this.headers({ Prefer: "count=exact" }) }
+    );
+    if (head.ok) {
+      const range = head.headers.get("content-range") ?? "0-0/0";
+      const total = Number(range.split("/")[1] ?? 0);
+      if (total >= KNOWLEDGE_CHUNKS.length) {
+        this.seeded = true;
+        return;
+      }
+    }
+
+    // Embed all chunks with the active provider, then upsert in one batch.
+    const dim = await getEmbedDim();
+    const rows: Array<{
+      id: string;
+      topic: string;
+      title: string;
+      content: string;
+      embedding: number[];
+    }> = [];
+    for (const c of KNOWLEDGE_CHUNKS) {
+      const v = await embed(c.text);
+      if (v.length !== dim) {
+        throw new Error(
+          `Embed dim mismatch: provider returned ${v.length}, expected ${dim}.`
+        );
+      }
+      rows.push({
+        id: c.id,
+        topic: c.topic,
+        title: c.title,
+        content: c.text,
+        embedding: v,
+      });
+    }
+
+    const res = await fetch(`${this.url}/rest/v1/kb_chunks`, {
+      method: "POST",
+      headers: this.headers({
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      }),
+      body: JSON.stringify(rows),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(
+        `Supabase chunk seed failed: ${res.status} ${body.slice(0, 200)}`
+      );
+    }
+    this.seeded = true;
+  }
+
+  async search(query: string, k: number): Promise<RetrievedChunk[]> {
+    await this.ready();
+    const vec = await embed(query);
+
+    const res = await fetch(`${this.url}/rest/v1/rpc/match_kb_chunks`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ query_embedding: vec, match_count: k }),
+    });
+    if (!res.ok) {
+      throw new Error(`Supabase RPC match_kb_chunks failed: ${res.status}`);
+    }
+    const rows = (await res.json()) as Array<{
+      id: string;
+      topic: string;
+      title: string;
+      content: string;
+      score: number;
+    }>;
+    return rows.map((r) => ({
+      id: r.id,
+      topic: r.topic,
+      title: r.title,
+      text: r.content,
+      score: r.score,
+    }));
+  }
+}
+
 /* --------------------------------- Factory -------------------------------- */
 
 let singleton: VectorStore | null = null;
@@ -202,6 +336,12 @@ export function getVectorStore(): VectorStore {
   if (singleton) return singleton;
   if (process.env.QDRANT_URL && process.env.QDRANT_API_KEY) {
     singleton = new QdrantStore();
+  } else if (
+    process.env.SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_KEY &&
+    process.env.VECTOR_STORE !== "memory"
+  ) {
+    singleton = new SupabaseVectorStore();
   } else {
     singleton = new InMemoryStore();
   }
@@ -209,5 +349,24 @@ export function getVectorStore(): VectorStore {
 }
 
 export function isRealVectorStore(): boolean {
-  return Boolean(process.env.QDRANT_URL && process.env.QDRANT_API_KEY);
+  return (
+    Boolean(process.env.QDRANT_URL && process.env.QDRANT_API_KEY) ||
+    (Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) &&
+      process.env.VECTOR_STORE !== "memory")
+  );
+}
+
+/** Used by /api/profile to label the wired stack. */
+export function vectorStoreLabel(): string {
+  if (process.env.QDRANT_URL && process.env.QDRANT_API_KEY) {
+    return "Qdrant (cloud)";
+  }
+  if (
+    process.env.SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_KEY &&
+    process.env.VECTOR_STORE !== "memory"
+  ) {
+    return "Supabase (pgvector)";
+  }
+  return "In-memory hybrid (cosine + BM25)";
 }

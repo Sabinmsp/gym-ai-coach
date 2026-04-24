@@ -50,72 +50,88 @@ export function AskAiScreen() {
       text: question,
       time: nowTime(),
     };
-    setMessages((m) => [...m, userMsg]);
+    const aiId = `a-${Date.now()}`;
+    const aiMsg: Msg = {
+      id: aiId,
+      role: "ai",
+      text: "",
+      time: nowTime(),
+      pending: true,
+    };
+
+    // Build chat history for the API from the state BEFORE adding the new user
+    // turn (send the prior conversation + the new question).
+    const history = messages
+      .filter((m) => m.id !== "welcome")
+      .map((m) => ({
+        role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+        content: m.text,
+      }));
+
+    setMessages((m) => [...m, userMsg, aiMsg]);
     setInput("");
     setThinking(true);
 
     try {
-      const res = await fetch("/api/ask", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          messages: [...history, { role: "user", content: question }],
+        }),
       });
 
       if (res.status === 429) {
         const j = (await res.json().catch(() => ({}))) as {
           retryAfterMs?: number;
         };
-        setMessages((m) => [
-          ...m,
-          {
-            id: `a-${Date.now()}`,
-            role: "ai",
-            text: `You're going fast — rate limit hit. Try again in ${Math.ceil(
-              (j.retryAfterMs ?? 5000) / 1000
-            )}s.`,
-            time: nowTime(),
-            error: true,
-          },
-        ]);
+        patchMsg(aiId, {
+          text: `You're going fast — try again in ${Math.ceil(
+            (j.retryAfterMs ?? 5000) / 1000
+          )}s.`,
+          error: true,
+          pending: false,
+        });
         return;
       }
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      const data = (await res.json()) as { answer: string };
-      setMessages((m) => [
-        ...m,
-        {
-          id: `a-${Date.now()}`,
-          role: "ai",
-          text: data.answer,
-          time: nowTime(),
-        },
-      ]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        patchMsg(aiId, { text: acc });
+      }
+      patchMsg(aiId, { text: acc.trim() || "…", pending: false });
     } catch (err) {
-      setMessages((m) => [
-        ...m,
-        {
-          id: `a-${Date.now()}`,
-          role: "ai",
-          text: "Something went wrong talking to the AI. Check the server logs.",
-          time: nowTime(),
-          error: true,
-        },
-      ]);
+      patchMsg(aiId, {
+        text: "Something went wrong talking to the AI. Please try again.",
+        error: true,
+        pending: false,
+      });
       console.error(err);
     } finally {
       setThinking(false);
     }
   }
 
+  function patchMsg(id: string, patch: Partial<Msg>) {
+    setMessages((m) =>
+      m.map((msg) => (msg.id === id ? { ...msg, ...patch } : msg))
+    );
+  }
+
   return (
-    <ScreenShell flair="ai" withTabBar={false}>
+    <ScreenShell flair="ai" withTabBar={false} noScroll>
       <div className="flex h-full w-full flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-10 pt-14 pb-3 px-5 bg-gradient-to-b from-ink-950 via-ink-950/95 to-transparent backdrop-blur-sm">
+        <div className="shrink-0 z-10 pt-14 pb-3 px-5 bg-gradient-to-b from-ink-950 via-ink-950/95 to-transparent backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-glow to-brand text-ink-950 shadow-glow">
@@ -135,14 +151,13 @@ export function AskAiScreen() {
         {/* Messages */}
         <div
           ref={scrollerRef}
-          className="flex-1 overflow-y-auto no-scrollbar px-4 pb-[120px]"
+          className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pb-4"
         >
           <div className="space-y-3">
             <SystemHint />
             {messages.map((m) => (
               <Bubble key={m.id} msg={m} />
             ))}
-            {thinking && <TypingBubble />}
 
             {messages.length === 1 && !thinking && (
               <div className="mt-4">
@@ -165,8 +180,8 @@ export function AskAiScreen() {
           </div>
         </div>
 
-        {/* Composer */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pt-3 pb-6 bg-gradient-to-t from-ink-950 via-ink-950/95 to-transparent">
+        {/* Composer — sits above the bottom tab bar */}
+        <div className="shrink-0 z-20 px-4 pt-3 pb-[104px] bg-gradient-to-t from-ink-950 via-ink-950/95 to-transparent">
           <div className="flex items-end gap-2">
             <button
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
@@ -229,6 +244,7 @@ function SystemHint() {
 
 function Bubble({ msg }: { msg: Msg }) {
   const isUser = msg.role === "user";
+  const isEmptyPending = msg.pending && !msg.text;
   return (
     <div
       className={cn(
@@ -246,32 +262,32 @@ function Bubble({ msg }: { msg: Msg }) {
             : "bg-white/[0.06] text-white border border-white/8 rounded-bl-md"
         )}
       >
-        <div className="whitespace-pre-wrap">{msg.text}</div>
-        <div
-          className={cn(
-            "mt-1 text-[10px]",
-            isUser ? "text-ink-950/50" : "text-white"
-          )}
-        >
-          {msg.time}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TypingBubble() {
-  return (
-    <div className="flex flex-col items-start animate-fade-in">
-      <div className="rounded-2xl rounded-bl-md border border-white/8 bg-white/[0.06] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1.5">
+        {isEmptyPending ? (
+          <div className="flex items-center gap-1.5 py-0.5">
             <Dot delay={0} />
             <Dot delay={120} />
             <Dot delay={240} />
           </div>
-          <span className="text-[10.5px] text-white/60">typing…</span>
-        </div>
+        ) : (
+          <>
+            <div className="whitespace-pre-wrap">
+              {msg.text}
+              {msg.pending && (
+                <span className="ml-0.5 inline-block h-3 w-1.5 translate-y-[2px] animate-pulse bg-brand/80" />
+              )}
+            </div>
+            {!msg.pending && (
+              <div
+                className={cn(
+                  "mt-1 text-[10px]",
+                  isUser ? "text-ink-950/50" : "text-white"
+                )}
+              >
+                {msg.time}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

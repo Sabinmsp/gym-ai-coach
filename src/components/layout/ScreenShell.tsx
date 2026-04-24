@@ -8,6 +8,8 @@ interface ScreenShellProps {
   withTabBar?: boolean;
   /** Background flair variant */
   flair?: "home" | "ai" | "progress" | "profile" | "none";
+  /** Disable the inner vertical scroll container (screen handles its own layout) */
+  noScroll?: boolean;
 }
 
 export function ScreenShell({
@@ -15,6 +17,7 @@ export function ScreenShell({
   className,
   withTabBar = true,
   flair = "home",
+  noScroll = false,
 }: ScreenShellProps) {
   return (
     <div className={cn("relative w-full h-full overflow-hidden bg-ink-950 text-white", className)}>
@@ -46,8 +49,13 @@ export function ScreenShell({
 
       <div
         className={cn(
-          "relative h-full w-full overflow-y-auto no-scrollbar",
-          withTabBar ? "pb-[120px]" : "pb-6"
+          "relative h-full w-full",
+          noScroll
+            ? "overflow-hidden"
+            : cn(
+                "overflow-y-auto no-scrollbar",
+                withTabBar ? "pb-[120px]" : "pb-6"
+              )
         )}
       >
         {children}

@@ -1,12 +1,12 @@
 import type { AskResponse, UserProfile } from "./types";
-import { getVectorStore, isRealVectorStore } from "./vectorStore";
+import { getVectorStore, vectorStoreLabel } from "./vectorStore";
 import { getProfileStore, isRealProfileStore } from "./profileStore";
 import { generateAnswer, isOllamaUp } from "./llm";
 import { buildSystemPrompt } from "./prompt";
 import { LruCache, hashKey, normalizeQuestion } from "./cache";
 import { rateLimit } from "./rateLimit";
 import { RequestLogger } from "./logger";
-import { isRealEmbeddings } from "./embeddings";
+import { getEmbedProvider, isRealEmbeddings } from "./embeddings";
 
 const answerCache = new LruCache<AskResponse>(200, 1000 * 60 * 30);
 
@@ -87,10 +87,12 @@ export async function ask({
 
   /* -------------------------- 4. Retrieve chunks --------------------------- */
   const vector = getVectorStore();
+  // Prime the embed provider cache so the meta label reflects truth.
+  const embedProvider = await getEmbedProvider();
   const retrieved = await log.step(
     `retrieve (${vector.name}, top-${k})`,
     () => vector.search(question, k),
-    { embeddings: isRealEmbeddings() ? "openai" : "hashed-fallback" }
+    { embeddings: embedProvider }
   );
 
   /* --------------------------- 5. Build prompt ----------------------------- */
@@ -152,12 +154,20 @@ export async function getStackInfo() {
     ? `Ollama / ${process.env.OLLAMA_MODEL ?? "qwen2.5:7b"}`
     : "Template fallback";
 
+  // Prime the embedding provider cache so isRealEmbeddings() reflects truth.
+  const embedProvider = await getEmbedProvider();
+  const embeddingsLabel =
+    embedProvider === "openai"
+      ? "OpenAI text-embedding-3-small (1536d)"
+      : embedProvider === "ollama"
+      ? `Ollama / ${process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text"} (768d)`
+      : "Hashed bag-of-words (256d, demo)";
+
   return {
-    vectorStore: isRealVectorStore() ? "Qdrant (cloud)" : "In-memory cosine",
-    profileStore: isRealProfileStore() ? "Supabase" : "In-memory",
-    embeddings: isRealEmbeddings()
-      ? "OpenAI text-embedding-3-small"
-      : "Hashed fallback (demo)",
+    vectorStore: vectorStoreLabel(),
+    profileStore: isRealProfileStore() ? "Supabase (Postgres)" : "In-memory",
+    embeddings: embeddingsLabel,
     llm,
+    realEmbeddings: isRealEmbeddings(),
   };
 }

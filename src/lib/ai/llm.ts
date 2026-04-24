@@ -12,11 +12,17 @@ export interface LlmAnswer {
   usedProvider: "openai" | "ollama" | "template-fallback";
 }
 
+export interface ChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
 interface GenerateArgs {
   systemPrompt: string;
   userQuestion: string;
   profile: UserProfile;
   chunks: RetrievedChunk[];
+  history?: ChatTurn[];
 }
 
 export async function generateAnswer(args: GenerateArgs): Promise<LlmAnswer> {
@@ -65,12 +71,13 @@ export async function isOllamaUp(): Promise<boolean> {
   return ollamaIsUp;
 }
 
-async function callOllama({
+function buildOllamaMessages({
   systemPrompt,
   userQuestion,
   profile,
   chunks,
-}: GenerateArgs): Promise<LlmAnswer> {
+  history = [],
+}: GenerateArgs) {
   const contextBlock = chunks
     .map((c, i) => `[${i + 1}] (${c.topic}) ${c.title}\n${c.text}`)
     .join("\n\n");
@@ -87,23 +94,26 @@ async function callOllama({
     `Injuries / notes: ${profile.injuries || "none"}`,
   ].join("\n");
 
+  return [
+    { role: "system" as const, content: systemPrompt },
+    {
+      role: "system" as const,
+      content: `USER PROFILE:\n${profileBlock}\n\nRETRIEVED KNOWLEDGE:\n${contextBlock}`,
+    },
+    ...history.map((h) => ({ role: h.role, content: h.content })),
+    { role: "user" as const, content: userQuestion },
+  ];
+}
+
+async function callOllama(args: GenerateArgs): Promise<LlmAnswer> {
   const res = await fetch(`${OLLAMA_URL}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
       stream: false,
-      options: {
-        temperature: 0.3,
-        num_predict: 220,
-      },
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `USER PROFILE:\n${profileBlock}\n\nRETRIEVED KNOWLEDGE:\n${contextBlock}\n\nQUESTION: ${userQuestion}`,
-        },
-      ],
+      options: { temperature: 0.3, num_predict: 220 },
+      messages: buildOllamaMessages(args),
     }),
   });
 
@@ -116,29 +126,59 @@ async function callOllama({
   };
 }
 
-async function callOpenAi({
-  systemPrompt,
-  userQuestion,
-  profile,
-  chunks,
-}: GenerateArgs): Promise<LlmAnswer> {
+async function* streamOllama(
+  args: GenerateArgs
+): AsyncGenerator<string, void, void> {
+  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      stream: true,
+      options: { temperature: 0.3, num_predict: 220 },
+      messages: buildOllamaMessages(args),
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Ollama stream failed: ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, idx).trim();
+      buf = buf.slice(idx + 1);
+      if (!line) continue;
+      try {
+        const json = JSON.parse(line) as {
+          message?: { content?: string };
+          done?: boolean;
+        };
+        const piece = json.message?.content;
+        if (piece) yield piece;
+        if (json.done) return;
+      } catch {
+        // ignore partial/non-JSON lines
+      }
+    }
+  }
+}
+
+function buildOpenAiMessages(args: GenerateArgs) {
+  // OpenAI accepts the same message shape as Ollama.
+  return buildOllamaMessages(args);
+}
+
+async function callOpenAi(args: GenerateArgs): Promise<LlmAnswer> {
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
-  const contextBlock = chunks
-    .map((c, i) => `[${i + 1}] (${c.topic}) ${c.title}\n${c.text}`)
-    .join("\n\n");
-
-  const profileBlock = [
-    `Name: ${profile.name}`,
-    `Age: ${profile.age}`,
-    `Weight: ${profile.weightKg} kg`,
-    `Height: ${profile.heightCm} cm`,
-    `Goal: ${profile.goal}`,
-    `Diet: ${profile.diet}`,
-    `Experience: ${profile.experience}`,
-    `Training days / week: ${profile.trainingDaysPerWeek}`,
-    `Injuries / notes: ${profile.injuries || "none"}`,
-  ].join("\n");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -149,13 +189,7 @@ async function callOpenAi({
     body: JSON.stringify({
       model,
       temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `USER PROFILE:\n${profileBlock}\n\nRETRIEVED KNOWLEDGE:\n${contextBlock}\n\nQUESTION: ${userQuestion}`,
-        },
-      ],
+      messages: buildOpenAiMessages(args),
     }),
   });
 
@@ -168,6 +202,89 @@ async function callOpenAi({
     model,
     usedProvider: "openai",
   };
+}
+
+async function* streamOpenAi(
+  args: GenerateArgs
+): AsyncGenerator<string, void, void> {
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.3,
+      stream: true,
+      messages: buildOpenAiMessages(args),
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`OpenAI stream failed: ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, idx).trim();
+      buf = buf.slice(idx + 1);
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (payload === "[DONE]") return;
+      try {
+        const json = JSON.parse(payload) as {
+          choices?: Array<{ delta?: { content?: string } }>;
+        };
+        const piece = json.choices?.[0]?.delta?.content;
+        if (piece) yield piece;
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
+/**
+ * Streaming variant. Yields tokens as they arrive. Falls back to emitting the
+ * template answer in one chunk when no real LLM is available.
+ */
+export async function* streamAnswer(
+  args: GenerateArgs
+): AsyncGenerator<string, { model: string; usedProvider: LlmAnswer["usedProvider"] }, void> {
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      for await (const tok of streamOpenAi(args)) yield tok;
+      return {
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        usedProvider: "openai",
+      };
+    } catch (err) {
+      console.warn("[ai] OpenAI stream failed, trying next provider:", err);
+    }
+  }
+
+  if (await isOllamaUp()) {
+    try {
+      for await (const tok of streamOllama(args)) yield tok;
+      return { model: `ollama/${OLLAMA_MODEL}`, usedProvider: "ollama" };
+    } catch (err) {
+      console.warn("[ai] Ollama stream failed, using template fallback:", err);
+    }
+  }
+
+  const fallback = templateAnswer(args);
+  yield fallback.text;
+  return { model: fallback.model, usedProvider: fallback.usedProvider };
 }
 
 /**

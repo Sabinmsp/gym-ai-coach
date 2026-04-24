@@ -77,9 +77,24 @@ class SupabaseProfileStore implements ProfileStore {
       `${this.url}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=data`,
       { headers: this.headers() }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[ai] Supabase profile fetch failed: ${res.status}`);
+      return null;
+    }
     const rows = (await res.json()) as Array<{ data: UserProfile }>;
-    return rows[0]?.data ?? null;
+    if (rows[0]?.data) return rows[0].data;
+
+    // First-run convenience: if the demo user is requested but absent,
+    // seed it so the app works end-to-end without manual setup.
+    if (id === DEFAULT_PROFILE.id) {
+      try {
+        return await this.upsert(DEFAULT_PROFILE);
+      } catch (err) {
+        console.warn("[ai] Demo profile seed failed:", err);
+        return DEFAULT_PROFILE;
+      }
+    }
+    return null;
   }
 
   async upsert(profile: UserProfile): Promise<UserProfile> {
