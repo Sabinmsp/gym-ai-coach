@@ -87,11 +87,47 @@ export async function POST(req: NextRequest) {
   }
 
   const vector = getVectorStore();
-  const raw = await vector.search(question, 4);
+  let raw: Awaited<ReturnType<typeof vector.search>> = [];
+  try {
+    raw = await vector.search(question, 4);
+  } catch (err) {
+    // Misconfigured vector store (bad key, dim mismatch, network). Fall
+    // through to the empty-chunks refusal path rather than 500-ing the
+    // request — the user sees a clean "no info" reply instead of an error.
+    console.error("[chat] retrieval failed:", err);
+  }
   // Drop chunks below a minimum relevance threshold so we don't pollute the
   // prompt with unrelated topics (which small models then latch onto).
   const MIN_SCORE = 0.25;
   const chunks = raw.filter((c) => (c.score ?? 0) >= MIN_SCORE);
+
+  // Hard refusal path: if retrieval came back empty after filtering, we
+  // short-circuit the LLM. Small local models otherwise invent facts to fill
+  // the silence ("a liter of water contains 91g of carbs", etc).
+  if (chunks.length === 0) {
+    const refusal =
+      "I don't have verified info on that yet — I won't guess. Try asking about training, nutrition, recovery, injuries, cardio, or supplements.";
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(refusal));
+        controller.close();
+      },
+    });
+    console.log(
+      `[chat] refused · "${question.slice(0, 40)}" · 0/${raw.length} chunks (top score ${
+        raw[0]?.score?.toFixed(3) ?? "n/a"
+      })`
+    );
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
   const systemPrompt = buildSystemPrompt(profile);
 
   const stream = new ReadableStream<Uint8Array>({

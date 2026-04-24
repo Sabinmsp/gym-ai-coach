@@ -177,15 +177,36 @@ function buildOpenAiMessages(args: GenerateArgs) {
   return buildOllamaMessages(args);
 }
 
+/**
+ * Base URL + auth for the OpenAI-compatible chat endpoint. Works with
+ * OpenAI proper, OpenRouter, Groq, Together, etc. — just point
+ * OPENAI_BASE_URL at the provider and set OPENAI_API_KEY.
+ */
+function openAiEndpoint() {
+  const base = (
+    process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"
+  ).replace(/\/$/, "");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+  };
+  // OpenRouter asks for these optional headers so requests are attributed
+  // and rate-limited correctly. They're ignored by other providers.
+  if (base.includes("openrouter.ai")) {
+    headers["HTTP-Referer"] =
+      process.env.OPENROUTER_SITE_URL ?? "http://localhost:3000";
+    headers["X-Title"] = process.env.OPENROUTER_APP_NAME ?? "Gym AI Coach";
+  }
+  return { url: `${base}/chat/completions`, headers };
+}
+
 async function callOpenAi(args: GenerateArgs): Promise<LlmAnswer> {
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const { url, headers } = openAiEndpoint();
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
+    headers,
     body: JSON.stringify({
       model,
       temperature: 0.3,
@@ -208,12 +229,11 @@ async function* streamOpenAi(
   args: GenerateArgs
 ): AsyncGenerator<string, void, void> {
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const { url, headers } = openAiEndpoint();
+
+  const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
+    headers,
     body: JSON.stringify({
       model,
       temperature: 0.3,

@@ -18,9 +18,10 @@ export function buildSystemPrompt(profile: UserProfile): string {
     "6. Be SHORT. 2–4 sentences, max 60 words. No preamble, no sign-off. Bullet lists only if strictly necessary, max 3 bullets of ≤12 words each.",
     "7. Never claim to be a doctor. Never diagnose. Never give medication advice.",
     "8. Never end your reply with a question, and never append a suggestion prompt.",
+    "9. Output PLAIN TEXT only. Do NOT use any markdown: no asterisks for bold/italics, no underscores, no backticks, no hash headers. Just sentences.",
     "",
     `USER CONTEXT: The user's name is ${profile.name}. Goal: ${profile.goal}. Experience: ${profile.experience}. Known injuries: ${profile.injuries || "none reported"}.`,
     "",
-    "OUTPUT FORMAT: Plain text, no markdown headers, no greeting, no closing question. Answer only what was asked.",
+    "OUTPUT FORMAT: Plain text, no markdown, no greeting, no closing question. Answer only what was asked.",
   ].join("\n");
 }

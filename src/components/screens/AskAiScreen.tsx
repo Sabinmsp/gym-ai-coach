@@ -106,9 +106,9 @@ export function AskAiScreen() {
         const { value, done } = await reader.read();
         if (done) break;
         acc += decoder.decode(value, { stream: true });
-        patchMsg(aiId, { text: acc });
+        patchMsg(aiId, { text: stripMarkdown(acc) });
       }
-      patchMsg(aiId, { text: acc.trim() || "…", pending: false });
+      patchMsg(aiId, { text: stripMarkdown(acc).trim() || "…", pending: false });
     } catch (err) {
       patchMsg(aiId, {
         text: "Something went wrong talking to the AI. Please try again.",
@@ -311,4 +311,20 @@ function nowTime() {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+/**
+ * Remove common markdown artifacts so the chat bubble renders clean plain
+ * text. Small LLMs often sprinkle **bold** and *italics* even when told not
+ * to — stripping them client-side guarantees a consistent look.
+ */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/(^|\s)_(.+?)_(?=\s|[.,!?;:]|$)/g, "$1$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*/g, "");
 }
